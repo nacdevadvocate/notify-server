@@ -26,6 +26,7 @@ app.get("/", (req: Request, res: Response) => {
 
 app.post('/notifications', async (req: Request, res: Response) => {
     try {
+        console.log(req.body)
         const apiKey = req.headers['x-api-key'] as string;
 
         if (!apiKey) {
@@ -59,7 +60,6 @@ app.post('/notifications', async (req: Request, res: Response) => {
         res.status(500).json({ error: 'Internal Server Error' });
     }
 });
-
 
 
 // If API doesn't exsist
