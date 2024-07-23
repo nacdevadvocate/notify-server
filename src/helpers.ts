@@ -1,6 +1,7 @@
 export interface SlackParams {
     id: string
     source: string
+    type: string
     device: string
     deviceStatus: string
     eventType: string
@@ -18,7 +19,7 @@ function sendToSlack(data: SlackParams) {
             author_icon: "https://networkascode.nokia.io/static-assets/default/dark-logo-1abf47ae-2af8-497d-9a8c-98a363044d5f-83c1f9f5-e37d-4802-9961-e7462ecc5e88.png",
             title: "NaC API Documentation",
             title_link: "https://developer.networkascode.nokia.io/",
-            text: "This is the main text of the attachment.",
+            text: "Notification from Network as Code",
             fields: [
                 {
                     title: "ID",
@@ -28,6 +29,11 @@ function sendToSlack(data: SlackParams) {
                 {
                     title: "Source",
                     value: data.source,
+                    short: false
+                },
+                {
+                    title: "Type",
+                    value: data.type,
                     short: false
                 },
                 {

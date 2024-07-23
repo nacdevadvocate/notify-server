@@ -78,6 +78,7 @@ app.post('/notifications', async (req: Request, res: Response) => {
         const data: SlackParams = {
             id: req.body.id,
             source: req.body.source,
+            type: req.body.type,
             device: req.body.data.device.networkAccessIdentifier
                 ? req.body.data.device.networkAccessIdentifier
                 : req.body.data.device.phoneNumber,
