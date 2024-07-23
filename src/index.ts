@@ -3,11 +3,14 @@ import dotenv from "dotenv";
 import morgan from 'morgan';
 import cors from "cors"
 import os from "os"
+import axios from "axios";
+import { sendToSlack, SlackParams } from "./helpers";
 
 dotenv.config();
 
 const app: Express = express();
 const port = process.env.PORT || 5000;
+const webhookURL = process.env.SLACK_WEBHOOK_URL || "";
 
 
 app.use(cors());
@@ -24,9 +27,41 @@ app.get("/", (req: Request, res: Response) => {
 });
 
 
+const attachments = [
+    {
+        fallback: "This is a message with JSON data",
+        color: "#36a64f",
+        pretext: "NaC Notifications",
+        author_name: "NaC",
+        author_link: "https://networkascode.nokia.io/",
+        author_icon: "https://networkascode.nokia.io/static-assets/default/dark-logo-1abf47ae-2af8-497d-9a8c-98a363044d5f-83c1f9f5-e37d-4802-9961-e7462ecc5e88.png",
+        title: "NaC API Documentation",
+        title_link: "https://developer.networkascode.nokia.io/",
+        text: "This is the main text of the attachment.",
+        fields: [
+            {
+                title: "Priority",
+                value: "High",
+                short: false
+            },
+            {
+                title: "Status",
+                value: "Completed",
+                short: false
+            }
+        ],
+        image_url: "hhttps://networkascode.nokia.io/static-assets/default/dark-logo-1abf47ae-2af8-497d-9a8c-98a363044d5f-83c1f9f5-e37d-4802-9961-e7462ecc5e88.png",
+        thumb_url: "https://networkascode.nokia.io/static-assets/default/dark-logo-1abf47ae-2af8-497d-9a8c-98a363044d5f-83c1f9f5-e37d-4802-9961-e7462ecc5e88.png"
+    }
+];
+
+
 app.post('/notifications', async (req: Request, res: Response) => {
     try {
         console.log(req.body)
+
+
+
         const apiKey = req.headers['x-api-key'] as string;
 
         if (!apiKey) {
@@ -40,6 +75,24 @@ app.post('/notifications', async (req: Request, res: Response) => {
         if (authToken !== 'nacauth') {
             return res.status(401).json({ error: 'Invalid Bearer Token' });
         }
+        const data: SlackParams = {
+            id: req.body.id,
+            source: req.body.source,
+            device: req.body.data.device.networkAccessIdentifier
+                ? req.body.data.device.networkAccessIdentifier
+                : req.body.data.device.phoneNumber,
+            deviceStatus: req.body.event.eventDetail.deviceStatus,
+            eventType: req.body.event.eventType,
+            eventTime: req.body.event.eventTime
+        };
+
+
+        const response = await axios.post(webhookURL, {
+            attachments: sendToSlack(data)
+        });
+
+        console.log('Message sent successfully to Slack:', response.data);
+
 
         // Handling the notification payload asynchronously (simulated async operation)
         console.log("show the device");
@@ -48,6 +101,7 @@ app.post('/notifications', async (req: Request, res: Response) => {
         if (req.body?.event?.eventDetail?.deviceStatus === "REACHABLE") {
             console.log("Device is available");
             console.log(req.body?.event?.eventDetail?.device);
+
         } else if (req.body?.event?.eventDetail?.deviceStatus === "UNREACHABLE") {
             console.log("Device is not available");
             console.log(req.body?.event?.eventDetail?.device);
