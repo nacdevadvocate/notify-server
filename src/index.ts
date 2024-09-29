@@ -71,7 +71,8 @@ wss.on('connection', (ws: WebSocket, request: Request, pathname: string) => {
 
 // Endpoint for testing
 app.get("/", (req: Request, res: Response) => {
-    const message = `API is working as expected - API gateway: ${os.hostname()}`
+    // const message = `API is working as expected - API gateway: ${os.hostname()}`
+    const message = `Unauthorized`
     console.log(message)
     res.status(200).json({ message });
 });
@@ -82,7 +83,7 @@ app.get('/connected-users-count', (req: Request, res: Response) => {
     res.json({ count: clients.size });
 });
 
-// Endpoint to get the list of connected user IDs
+// Endpoint to get the list of connected user IDs 
 app.get('/connected-user-ids', (req: Request, res: Response) => {
     const userIds = Array.from(clients.keys());
     res.json({ userIds });
@@ -102,16 +103,8 @@ app.post('/notifications/:userId', async (req: Request, res: Response) => {
         }
 
         console.log("show the device");
-        console.log(req.body?.event?.eventDetail?.device);
+        console.log(req.body);
 
-        if (req.body?.event?.eventDetail?.deviceStatus === "REACHABLE") {
-            console.log("Device is available");
-            console.log(req.body?.event?.eventDetail?.device);
-
-        } else if (req.body?.event?.eventDetail?.deviceStatus === "UNREACHABLE") {
-            console.log("Device is not available");
-            console.log(req.body?.event?.eventDetail?.device);
-        }
     } catch (error) {
         console.error('Error handling notification:', error);
         res.status(500).json({ error: 'Internal Server Error' });
@@ -122,16 +115,7 @@ app.post('/notifications/:userId', async (req: Request, res: Response) => {
 app.post('/notifications', async (req: Request, res: Response) => {
     try {
         console.log("show the device");
-        console.log(req.body?.event?.eventDetail?.device);
-
-        if (req.body?.event?.eventDetail?.deviceStatus === "REACHABLE") {
-            console.log("Device is available");
-            console.log(req.body?.event?.eventDetail?.device);
-
-        } else if (req.body?.event?.eventDetail?.deviceStatus === "UNREACHABLE") {
-            console.log("Device is not available");
-            console.log(req.body?.event?.eventDetail?.device);
-        }
+        console.log(req.body);
 
         // Sending a response
         res.status(200).json({ message: 'Notification handled successfully' });
@@ -159,16 +143,7 @@ app.post('/notifications-auth', async (req: Request, res: Response) => {
 
         // Handling the notification payload asynchronously (simulated async operation)
         console.log("show the device");
-        console.log(req.body?.event?.eventDetail?.device);
-
-        if (req.body?.event?.eventDetail?.deviceStatus === "REACHABLE") {
-            console.log("Device is available");
-            console.log(req.body?.event?.eventDetail?.device);
-
-        } else if (req.body?.event?.eventDetail?.deviceStatus === "UNREACHABLE") {
-            console.log("Device is not available");
-            console.log(req.body?.event?.eventDetail?.device);
-        }
+        console.log(req.body);
 
         // Sending a response
         res.status(200).json({ message: 'Notification handled successfully' });
@@ -219,16 +194,7 @@ app.post('/notifications-slack', async (req: Request, res: Response) => {
 
         // Handling the notification payload asynchronously (simulated async operation)
         console.log("show the device");
-        console.log(req.body?.event?.eventDetail?.device);
-
-        if (req.body?.event?.eventDetail?.deviceStatus === "REACHABLE") {
-            console.log("Device is available");
-            console.log(req.body?.event?.eventDetail?.device);
-
-        } else if (req.body?.event?.eventDetail?.deviceStatus === "UNREACHABLE") {
-            console.log("Device is not available");
-            console.log(req.body?.event?.eventDetail?.device);
-        }
+        console.log(req.body);
 
         // Sending a response
         res.status(200).json({ message: 'Notification handled successfully' });
