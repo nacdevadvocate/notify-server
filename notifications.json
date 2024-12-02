@@ -1,0 +1,33 @@
+{
+  "d96abc92-a111-48a9-a5c8-bea34e88cd31": [
+    {
+      "glossary": {
+        "title": "wfwefwe",
+        "GlossList": {
+          "GlossSee": "wefwefew"
+        }
+      },
+      "notificationDateByServer": "2024-12-02T19:59:27.519Z"
+    },
+    {
+      "glossary": {
+        "title": "wfwoowowowowefwe",
+        "GlossList": {
+          "GlossSee": "wowoowow"
+        }
+      },
+      "notificationDateByServer": "2024-12-02T20:00:04.796Z"
+    }
+  ],
+  "6dece977-3741-4b20-af54-14e7c4c36dd0": [
+    {
+      "window": {
+        "title": "Sample Konfabulator Widget",
+        "name": "main_window",
+        "width": 500,
+        "height": 500
+      },
+      "notificationDateByServer": "2024-12-02T20:00:56.409Z"
+    }
+  ]
+}

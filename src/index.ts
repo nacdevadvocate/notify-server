@@ -2,7 +2,8 @@ import express, { Express, Request, Response, NextFunction } from "express";
 import dotenv from "dotenv";
 import morgan from 'morgan';
 import cors from "cors"
-import os from "os"
+import fs from 'fs';
+import path from 'path';
 import axios from "axios";
 import WebSocket, { WebSocketServer } from 'ws';
 import { parse } from 'url';
@@ -27,6 +28,25 @@ const server = app.listen(port, () => {
 
 const wss = new WebSocketServer({ noServer: true });
 const clients = new Map<string, WebSocket>(); // Map to store connected clients and their IDs
+const notificationData: Record<string, any[]> = {}; // In-memory storage for notifications
+
+// File path for backup
+console.log(__dirname)
+const backupFilePath = path.join(__dirname, '..', 'notifications.json');
+
+// Load backup data on startup
+if (fs.existsSync(backupFilePath)) {
+    const rawData = fs.readFileSync(backupFilePath, 'utf-8');
+    Object.assign(notificationData, JSON.parse(rawData));
+    console.log('Loaded notification data from backup');
+}
+
+// // Periodically save in-memory data to file
+// setInterval(() => {
+//     fs.writeFileSync(backupFilePath, JSON.stringify(notificationData, null, 2));
+//     console.log('Backup saved to file');
+// }, 10000); // Every 10 seconds
+
 
 server.on('upgrade', (request, socket, head) => {
     const pathname = parse(request.url!).pathname;
@@ -46,7 +66,13 @@ wss.on('connection', (ws: WebSocket, request: Request, pathname: string) => {
         clients.set(userId, ws);
 
         console.log(`Client connected: ${userId}`);
-        ws.send(JSON.stringify({ type: 'USER_ID', userId })); // Send user ID to the client
+        // ws.send(JSON.stringify({ type: 'USER_ID', userId })); // Send user ID to the client
+        const rawData = fs.readFileSync(backupFilePath, 'utf-8');
+        const allNotifications = JSON.parse(rawData);
+        const userNotifications = allNotifications[userId] || [];
+
+        ws.send(JSON.stringify(userNotifications));
+
 
         ws.on('message', (message: string) => {
             console.log(`Received message from ${userId}: ${message}`);
@@ -80,13 +106,13 @@ app.get("/", (req: Request, res: Response) => {
 
 // Endpoint to get the count of connected users
 app.get('/connected-users-count', (req: Request, res: Response) => {
-    res.json({ count: clients.size });
+    res.status(200).json({ count: clients.size });
 });
 
 // Endpoint to get the list of connected user IDs 
 app.get('/connected-user-ids', (req: Request, res: Response) => {
     const userIds = Array.from(clients.keys());
-    res.json({ userIds });
+    res.status(200).json({ userIds });
 });
 
 
@@ -94,15 +120,38 @@ app.get('/connected-user-ids', (req: Request, res: Response) => {
 app.post('/notifications/:userId', async (req: Request, res: Response) => {
     try {
         const { userId } = req.params;
+
+        // Save new notification in memory
+        if (!notificationData[userId]) {
+            notificationData[userId] = [];
+        }
+        const notificationWithDate = {
+            ...req.body, // Include all properties from the incoming request body
+            notificationDateByServer: new Date().toISOString() // Add a date field with the current timestamp
+        };
+        notificationData[userId].push(notificationWithDate);
+
+        // Persist the updated notification data to file
+        fs.writeFileSync(backupFilePath, JSON.stringify(notificationData, null, 2));
+        console.log(`Notification data saved to file for user: ${userId}`);
+
+        // Load all notifications for the user from file
+        const rawData = fs.readFileSync(backupFilePath, 'utf-8');
+        const allNotifications = JSON.parse(rawData);
+        const userNotifications = allNotifications[userId] || [];
+
         const client = clients.get(userId);
+
+        // Send all notifications to the WebSocket client if connected
         if (client && client.readyState === WebSocket.OPEN) {
-            client.send(JSON.stringify(req.body)); // Send the JSON object as a string
-            res.status(200).json({ message: 'Notification sent successfully' });
+            client.send(JSON.stringify(userNotifications)); // Send all notifications as an array
+            res.status(200).json({ message: 'All notifications sent successfully' });
         } else {
             res.status(404).json({ message: 'User not connected' });
         }
 
-        console.log("show the device");
+
+        console.log("userId: show the device");
         console.log(req.body);
 
     } catch (error) {
@@ -111,6 +160,27 @@ app.post('/notifications/:userId', async (req: Request, res: Response) => {
     }
 });
 
+
+// app.post('/notifications/:userId', async (req: Request, res: Response) => {
+//     try {
+//         const { userId } = req.params;
+//         const client = clients.get(userId);
+
+//         if (client && client.readyState === WebSocket.OPEN) {
+//             client.send(JSON.stringify(req.body)); // Send the JSON object as a string
+//             res.status(200).json({ message: 'Notification sent successfully' });
+//         } else {
+//             res.status(404).json({ message: 'User not connected' });
+//         }
+
+//         console.log("userId: show the device");
+//         console.log(req.body);
+
+//     } catch (error) {
+//         console.error('Error handling notification:', error);
+//         res.status(500).json({ error: 'Internal Server Error' });
+//     }
+// });
 
 app.post('/notifications', async (req: Request, res: Response) => {
     try {
