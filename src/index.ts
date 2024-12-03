@@ -1,6 +1,7 @@
 import express, { Express, Request, Response, NextFunction } from "express";
 import dotenv from "dotenv";
 import morgan from 'morgan';
+import cron from 'node-cron';
 import cors from "cors"
 import fs from 'fs';
 import path from 'path';
@@ -14,6 +15,8 @@ dotenv.config();
 const app: Express = express();
 const port = process.env.PORT || 5000;
 const webhookURL = process.env.SLACK_WEBHOOK_URL || "";
+const retentionDays = parseInt(process.env.DATA_RETENTION_DAYS || '12', 10); // Default to 12 days
+const retentionPeriod = retentionDays * 24 * 60 * 60 * 1000; // Convert days to milliseconds
 
 
 app.use(cors());
@@ -46,6 +49,36 @@ if (fs.existsSync(backupFilePath)) {
 //     fs.writeFileSync(backupFilePath, JSON.stringify(notificationData, null, 2));
 //     console.log('Backup saved to file');
 // }, 10000); // Every 10 seconds
+
+
+// Cron job: Run every night at 3 AM
+cron.schedule('0 3 * * *', () => {
+    console.log('Running cleanup job at 3 AM');
+
+    const currentTime = new Date().getTime();
+    const cutoffTime = currentTime - retentionPeriod; // Calculate the cutoff time based on retention period
+
+    // Remove old data from in-memory notificationData
+    Object.keys(notificationData).forEach(userId => {
+        notificationData[userId] = notificationData[userId].filter((notification: any) => {
+            const notificationTime = new Date(notification.notificationDateByServer).getTime();
+            return notificationTime >= cutoffTime; // Keep only notifications within the retention period
+        });
+
+        // If no notifications remain for the user, remove the userId entry from notificationData
+        if (notificationData[userId].length === 0) {
+            delete notificationData[userId];
+        }
+    });
+
+    // Write the cleaned data back to the file (notifications.json)
+    try {
+        fs.writeFileSync(backupFilePath, JSON.stringify(notificationData, null, 2));
+        console.log('Old notifications removed from in-memory storage and file');
+    } catch (error) {
+        console.error('Error writing cleaned data to file:', error);
+    }
+});
 
 
 server.on('upgrade', (request, socket, head) => {
@@ -115,6 +148,12 @@ app.get('/connected-user-ids', (req: Request, res: Response) => {
     res.status(200).json({ userIds });
 });
 
+
+app.get('/notifications-json', (req: Request, res: Response) => {
+    const rawData = fs.readFileSync(backupFilePath, 'utf-8');
+    const allNotifications = JSON.parse(rawData);
+    res.status(200).json({ allNotifications });
+});
 
 
 app.post('/notifications/:userId', async (req: Request, res: Response) => {
@@ -278,9 +317,18 @@ app.post('/notifications-slack', async (req: Request, res: Response) => {
 
 // If API doesn't exsist
 app.use((req: Request, res: Response, next: NextFunction) => {
-    const error = new Error("requested URL not found.");
-    res.status(404);
-    next(error);
+    res.status(404).json({
+        error: 'Route not found',
+        message: `Cannot ${req.method} ${req.path}`
+    });
 });
 
+// Error handling middleware
+app.use((err: any, req: Request, res: Response, next: NextFunction) => {
+    console.error('Error:', err); // Log the error for debugging
 
+    res.status(err.status || 500).json({
+        error: 'Internal Server Error',
+        message: err.message || 'An unexpected error occurred'
+    });
+});

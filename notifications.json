@@ -1,33 +1,17 @@
 {
-  "d96abc92-a111-48a9-a5c8-bea34e88cd31": [
+  "6ff75eb1-e94f-4457-9260-230a26e25e92": [
     {
-      "glossary": {
-        "title": "wfwefwe",
-        "GlossList": {
-          "GlossSee": "wefwefew"
-        }
+      "text": {
+        "data": "Click Here",
+        "size": 36,
+        "style": "bold",
+        "name": "text1",
+        "hOffset": 250,
+        "vOffset": 100,
+        "alignment": "center",
+        "onMouseUp": "sun1.opacity = (sun1.opacity / 100) * 90;"
       },
-      "notificationDateByServer": "2024-12-02T19:59:27.519Z"
-    },
-    {
-      "glossary": {
-        "title": "wfwoowowowowefwe",
-        "GlossList": {
-          "GlossSee": "wowoowow"
-        }
-      },
-      "notificationDateByServer": "2024-12-02T20:00:04.796Z"
-    }
-  ],
-  "6dece977-3741-4b20-af54-14e7c4c36dd0": [
-    {
-      "window": {
-        "title": "Sample Konfabulator Widget",
-        "name": "main_window",
-        "width": 500,
-        "height": 500
-      },
-      "notificationDateByServer": "2024-12-02T20:00:56.409Z"
+      "notificationDateByServer": "2024-12-03T11:50:07.675Z"
     }
   ]
 }
