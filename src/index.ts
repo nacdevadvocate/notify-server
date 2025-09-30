@@ -166,7 +166,8 @@ app.post('/notifications/:userId', async (req: Request, res: Response) => {
         }
         const notificationWithDate = {
             ...req.body, // Include all properties from the incoming request body
-            notificationDateByServer: new Date().toISOString() // Add a date field with the current timestamp
+            notificationDateByServer: new Date().toISOString(), // Add a date field with the current timestamp
+            method: req.method
         };
         notificationData[userId].push(notificationWithDate);
 
@@ -198,6 +199,55 @@ app.post('/notifications/:userId', async (req: Request, res: Response) => {
         res.status(500).json({ error: 'Internal Server Error' });
     }
 });
+
+
+
+app.get('/notifications/:userId', async (req: Request, res: Response) => {
+    try {
+        const { userId } = req.params;
+        const filters = req.query;
+
+        // Save new notification in memory
+        if (!notificationData[userId]) {
+            notificationData[userId] = [];
+        }
+        const notificationWithDateAndMethod = {
+            ...filters, // Include all properties from the incoming request body
+            notificationDateByServer: new Date().toISOString(), // Add a date field with the current timestamp
+            method: req.method
+        };
+        notificationData[userId].push(notificationWithDateAndMethod);
+
+        // Persist the updated notification data to file
+        fs.writeFileSync(backupFilePath, JSON.stringify(notificationData, null, 2));
+        console.log(`Notification data saved to file for user: ${userId}`);
+
+        // Load all notifications for the user from file
+        const rawData = fs.readFileSync(backupFilePath, 'utf-8');
+        const allNotifications = JSON.parse(rawData);
+        const userNotifications = allNotifications[userId] || [];
+
+        const client = clients.get(userId);
+
+        // Send all notifications to the WebSocket client if connected
+        if (client && client.readyState === WebSocket.OPEN) {
+            client.send(JSON.stringify(userNotifications)); // Send all notifications as an array
+            res.status(200).json({ message: 'All notifications sent successfully' });
+        } else {
+            res.status(404).json({ message: 'User not connected' });
+        }
+
+
+        console.log("userId: show the device");
+        console.log(req.body);
+
+    } catch (error) {
+        console.error('Error fetching notifications:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+
 
 
 // app.post('/notifications/:userId', async (req: Request, res: Response) => {
